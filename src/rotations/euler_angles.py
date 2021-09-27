@@ -1,6 +1,11 @@
 from __future__ import annotations
 import numpy as np
-from . import AngleType, Vector, RotationMatrix, UnitQuaternion
+from .common import AngleType, Vector
+from .rotation_matrix import RotationMatrix
+import typing
+
+if typing.TYPE_CHECKING:
+    from .unit_quaternion import UnitQuaternion
 
 
 class EulerAngles:
@@ -120,17 +125,16 @@ class EulerAngles:
     @staticmethod
     def from_rotmat(R: RotationMatrix) -> EulerAngles:
         """ Generate EulerAngles object from RotationMatrix """
-        pass
-        # if type(R) is RotationMatrix:
-        #     R = R.as_matrix()
-        # else:
-        #     raise ValueError("Input R must be of type RotationMatrix.")
-        #
-        # phi = np.arctan(R[2, 1] / R[2, 2])
-        # theta = -np.arcsin(R[2, 0])
-        # psi = np.arctan(R[1, 0] / R[0, 0])
-        #
-        # return EulerAngles(phi, theta, psi)
+        if type(R) is RotationMatrix:
+            R = R.as_matrix()
+        else:
+            raise ValueError("Input R must be of type RotationMatrix.")
+
+        phi = np.arctan(R[2, 1] / R[2, 2])
+        theta = -np.arcsin(R[2, 0])
+        psi = np.arctan(R[1, 0] / R[0, 0])
+
+        return EulerAngles(phi, theta, psi)
 
     @staticmethod
     def from_quat(q: UnitQuaternion) -> EulerAngles:

@@ -1,7 +1,5 @@
 # Dependencies for development
-
 pytest
 pytest-cov
-mypy
 flake8
 tox
