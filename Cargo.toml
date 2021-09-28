@@ -1,0 +1,13 @@
+[package]
+name = "unit_quaternion"
+version = "0.1.0"
+edition = "2018"
+authors = ["Speterius <peter.seres.ae@gmail.com>"]
+
+[lib]
+name = "rotations_rs"
+crate-type = ["cdylib"]
+
+[dependencies.pyo3]
+version = "0.13.2"
+features = ["extension-module"]
