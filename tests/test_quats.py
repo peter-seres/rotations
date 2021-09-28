@@ -1,6 +1,5 @@
 from rotations import UnitQuaternion, RotationMatrix, EulerAngles, AngleType
 import pytest
-import numpy as np
 
 
 @pytest.fixture
@@ -51,8 +50,8 @@ def test_wrong_constructors():
 
 
 def test_rotations(q_test, q_default):
-    q = q_test @ q_default
-    v = q_test @ [1.0, 0.0, 0.0]
+    q_test @ q_default
+    q_test @ [1.0, 0.0, 0.0]
 
     with pytest.raises(Exception):
         _ = q_test * q_default

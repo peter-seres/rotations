@@ -33,10 +33,10 @@ def test_wrong_constructors():
          [7, 8, 9, 7]]
 
     with pytest.raises(Exception):
-        R1 = RotationMatrix(a)
+        _ = RotationMatrix(a)
 
     with pytest.raises(Exception):
-        R2 = RotationMatrix(np.array(a).flatten())
+        _ = RotationMatrix(np.array(a).flatten())
 
 
 def test_identity():
@@ -54,7 +54,7 @@ def test_yawz():
     assert (R2 == np.eye(3)).all()
 
     with pytest.raises(Exception):
-        R3 = RotationMatrix.from_yaw_and_z(0, [0.0, 0.0, 1.0, 5.0])
+        _ = RotationMatrix.from_yaw_and_z(0, [0.0, 0.0, 1.0, 5.0])
 
 
 def test_repr():
