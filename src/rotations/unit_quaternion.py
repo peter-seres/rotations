@@ -1,22 +1,20 @@
 from __future__ import annotations
 import numpy as np
-from .common import AngleType, Vector, Matrix
+from .common import AngleType, Vector
+from .common import SO3 as so3
 from .euler_angles import EulerAngles
 from .rotation_matrix import RotationMatrix
 from typing import Union
-import common
 
 
 class UnitQuaternion(np.ndarray):
-
     """
     UnitQuaternion class. Subclassed from numpy array for performance.
-
     0: scalar element, real part, w
     1-2-3: vector element, imaginary part, x-y-z
     """
 
-    def __new__(cls, q: Vector):
+    def __new__(cls, q: Vector) -> UnitQuaternion:
 
         if len(q) != 4:
             raise ValueError(f"Input array q: {q} must have length 4.")
@@ -25,7 +23,7 @@ class UnitQuaternion(np.ndarray):
         return obj
 
     # noinspection PyMissingConstructor
-    def __init__(self, q: Vector):
+    def __init__(self, _: Vector) -> None:
         self.normalize()
 
     @property
@@ -50,6 +48,7 @@ class UnitQuaternion(np.ndarray):
 
     @property
     def is_unit(self, tolerance: float = 1e-15) -> bool:
+        """ Check whether the quaternion is on the 4D unit sphere with a tolerance. """
         return abs(1.0 - self.norm) < tolerance
 
     @property
@@ -59,33 +58,62 @@ class UnitQuaternion(np.ndarray):
 
     @property
     def imag(self) -> np.ndarray:
-        """ Imaginary / Vector part of a quaternion """
+        """ Imaginary / Vector part of the quaternion (3 by 1 numpy array) """
         return self[1:4]
 
     @imag.setter
     def imag(self, value: Vector) -> None:
+        """ Setter of the imaginary part of the quaternion."""
+
         if len(value) != 3:
             raise ValueError("Setting imaginary part must be done using an array with 3 elements.")
 
         self[1:4] = value
 
-    def normalize(self):
+    def normalize(self) -> None:
         if not self.is_unit:
             if self.norm > 0:
                 self.__itruediv__(self.norm)
 
-    def conjugate(self):
+    def normalized(self) -> UnitQuaternion:
+        self.normalize()
+        return self
+
+    def conjugate(self) -> UnitQuaternion:
         q = self.copy()
         q.imag *= -1
         return q
 
-    def inverse(self):
+    def inverse(self) -> UnitQuaternion:
         """ inverse = conjugate / norm for general quaternions. Unit quats are already normalized."""
         return self.conjugate()
 
-    def flipped(self):
+    def flipped(self) -> UnitQuaternion:
         """ The quaternion on the opposite side of the 4D sphere."""
-        return UnitQuaternion([-self.w, self.x, self.y, self.z])
+        q = self.copy()
+        q.real *= -1
+        return q
+
+    def unitX(self) -> np.ndarray:
+        """ Return X axis of respective rotation matrix (body X). """
+
+        return np.array([self.w ** 2 + self.x ** 2 - self.y ** 2 - self.z ** 2,
+                        2 * (self.x * self.y + self.w * self.z),
+                        2 * (self.x * self.z - self.w * self.y)])
+
+    def unitY(self):
+        """ Return Y axis of respective rotation matrix (body Y). """
+
+        return np.array([2 * (self.x * self.y - self.w * self.z),
+                        self.w ** 2 + self.y ** 2 - self.x ** 2 - self.z ** 2,
+                        2 * (self.y * self.z + self.w * self.x)])
+
+    def unitZ(self):
+        """ Return Z axis of respective rotation matrix (body Z). """
+
+        return np.array([2 * (self.x * self.z + self.w * self.y),
+                        2 * (self.y * self.z - self.w * self.x),
+                        self.w ** 2 + self.z ** 2 - self.x ** 2 - self.y ** 2])
 
     def __mul__(self, other):
         """ Override of the multiplication operator. """
@@ -108,15 +136,104 @@ class UnitQuaternion(np.ndarray):
         Q = np.eye(4) * self.real
         Q[0, 1:4] -= self.imag
         Q[1:4, 0] += self.imag
-        Q[1:4, 1:4] += common.hat(self.imag)
+        Q[1:4, 1:4] += so3.hat(self.imag)
         return Q
 
     def quat_product(self, q: UnitQuaternion) -> UnitQuaternion:
         return UnitQuaternion(self.as_prodmat() @ q)
 
-    def quat_rotate(self, v) -> np.ndarray:
+    def quat_rotate(self, v: Vector) -> np.ndarray:
         v = UnitQuaternion([0.0, *v])
         v_rotated = self.as_prodmat() @ v.as_prodmat() @ self.inverse()
+        return UnitQuaternion(v_rotated).normalized().imag
 
-        return UnitQuaternion(v_rotated)
+    def q_dot(self, omega: np.array) -> np.ndarray:
+        """
+        Returns a 4D numpy array representing the rate of the change of the quaternion.
+        q_dot = 0.5 * Q * [0, omega]^T
+        """
+        omega = np.append(0, omega)  # Add a zero as the scalar part
+        q_dot = UnitQuaternion(0.5 * self.as_prodmat() @ omega)
+        return q_dot
 
+    def R_bi(self):
+        """ Generate body-to-inertial rotation matrix from quaternion. """
+
+        return np.eye(3) + 2 * self.real * so3.hat(self.imag) + 2 * np.linalg.matrix_power(so3.hat(self.imag), 2)
+
+    def as_euler(self):
+        """ Return EulerAngles representation of rotation."""
+
+        roll_atan_first = 2 * (self.w * self.x + self.y * self.z)
+        roll_atan_second = 1.0 - 2.0 * (self.x ** 2 + self.y ** 2)
+        yaw_atan_first = 2 * (self.w * self.z + self.x * self.y)
+        yaw_atan_second = 1.0 - 2.0 * (self.y ** 2 + self.z ** 2)
+        pitch_arcsin = 2 * (self.w * self.y - self.x * self.z)
+
+        roll = np.arctan2(roll_atan_first, roll_atan_second)
+        pitch = np.arcsin(pitch_arcsin)
+        yaw = np.arctan2(yaw_atan_first, yaw_atan_second)
+
+        return EulerAngles([roll, pitch, yaw])
+
+    @staticmethod
+    def default() -> UnitQuaternion:
+        """ Zero-rotation quaternion. """
+        return UnitQuaternion([1.0, 0.0, 0.0, 0.0])
+
+    @staticmethod
+    def from_(w: float, x: float, y: float, z: float) -> UnitQuaternion:
+        """ Return UnitQuaternion from w, x, y, z elements."""
+        return UnitQuaternion([w, x, y, z])
+
+    @staticmethod
+    def from_parts(real: float, imag: np.ndarray) -> UnitQuaternion:
+        """ Return UnitQuaternion from scalar (real) and vector (imag) parts. """
+        return UnitQuaternion([real, *imag])
+
+    @staticmethod
+    def from_rotmat(R: Union[RotationMatrix, np.ndarray]):
+        """ Generate UnitQuaternion from RotationMatrix """
+
+        if type(R) == RotationMatrix:
+            R = R.as_matrix()
+        elif type(R) == np.ndarray:
+            pass
+        else:
+            raise ValueError("Input must be of type RotationMatrix or numpy array of size 3x3")
+
+        angle = np.arccos((np.trace(R) - 1) / 2.0)
+        real_part = np.cos(angle / 2.0)
+        return UnitQuaternion.from_parts(
+            real=real_part,
+            imag=so3.vex(so3.asymproj(R)) / (2.0 * real_part)
+        )
+
+    @staticmethod
+    def from_euler_angles(roll: float = 0, pitch: float = 0, yaw: float = 0,
+                          angletype: AngleType = AngleType.RADIANS) -> UnitQuaternion:
+        """ Generate UnitQuaternion from roll, pitch and yaw angles."""
+
+        if angletype == AngleType.DEGREES:
+            roll, pitch, yaw = np.deg2rad([roll, pitch, yaw])
+
+        q_yaw = UnitQuaternion.from_parts(
+            real=np.cos(yaw / 2.0),
+            imag=np.array([0.0, 0.0, np.sin(yaw / 2.0)])
+        )
+
+        q_pitch = UnitQuaternion.from_parts(
+            real=np.cos(pitch / 2.0),
+            imag=np.array([0.0, np.sin(pitch / 2.0), 0.0])
+        )
+
+        q_roll = UnitQuaternion.from_parts(
+            real=np.cos(roll / 2.0),
+            imag=np.array([np.sin(roll / 2.0), 0., 0.]))
+
+        return q_yaw @ q_pitch @ q_roll
+
+    @staticmethod
+    def from_euler(eul: EulerAngles) -> UnitQuaternion:
+        """ Generate UnitQuaternion from EulerAngles object."""
+        return UnitQuaternion.from_euler_angles(eul.roll, eul.pitch, eul.yaw)

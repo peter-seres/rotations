@@ -8,48 +8,57 @@ if typing.TYPE_CHECKING:
     from .unit_quaternion import UnitQuaternion
 
 
-class EulerAngles:
+class EulerAngles(np.ndarray):
     """ Euler angle representation of 3D rotation. """
 
-    def __init__(self, roll: float = 0.0, pitch: float = 0.0, yaw: float = 0.0,
-                 angletype: AngleType = AngleType.RADIANS):
+    def __new__(cls, v: Vector):
+
+        if len(v) != 3:
+            raise ValueError(f"Input array v: {v} must have length 3.")
+
+        obj = np.asarray(v, dtype=float).view(cls)
+        return obj
+
+    @staticmethod
+    def from_angles(roll: float = 0.0, pitch: float = 0.0, yaw: float = 0.0,
+                    angletype: AngleType = AngleType.RADIANS):
 
         if angletype == AngleType.DEGREES:
             roll, pitch, yaw = np.deg2rad([roll, pitch, yaw])
 
-        self._v = np.array([roll, pitch, yaw])
+        return EulerAngles([roll, pitch, yaw])
 
     @property
     def roll(self) -> float:
-        return self._v[0]
+        return self[0]
 
     @roll.setter
     def roll(self, value: float) -> None:
-        self._v[0] = value
+        self[0] = value
 
     @property
     def pitch(self) -> float:
-        return self._v[1]
+        return self[1]
 
     @pitch.setter
     def pitch(self, value: float) -> None:
-        self._v[1] = value
+        self[1] = value
 
     @property
     def yaw(self):
-        return self._v[2]
+        return self[2]
 
     @yaw.setter
     def yaw(self, value: float) -> None:
-        self._v[2] = value
+        self[2] = value
 
     def as_vector(self, angletype: AngleType = AngleType.RADIANS) -> np.ndarray:
         """ Represent class as a 3-by-1 vector. """
 
         if angletype == AngleType.DEGREES:
-            return np.rad2deg(self._v)
+            return np.rad2deg(self)
         else:
-            return self._v
+            return self
 
     def R_roll(self) -> np.ndarray:
         """ Generate (inertial-to-body) rotation matrix (due to roll) in East-Down plane. """
@@ -114,15 +123,6 @@ class EulerAngles:
         ]) / cos_theta
 
     @staticmethod
-    def from_vector(v: Vector, angletype: AngleType = AngleType.RADIANS) -> EulerAngles:
-        """ Generate EulerAngles object from a 3D vector. """
-
-        if len(v) != 3:
-            raise ValueError(f"Passed array v: {v} is not have length 3.")
-
-        return EulerAngles(roll=v[0], pitch=v[1], yaw=v[2], angletype=angletype)
-
-    @staticmethod
     def from_rotmat(R: RotationMatrix) -> EulerAngles:
         """ Generate EulerAngles object from RotationMatrix """
         if type(R) is RotationMatrix:
@@ -134,7 +134,7 @@ class EulerAngles:
         theta = -np.arcsin(R[2, 0])
         psi = np.arctan(R[1, 0] / R[0, 0])
 
-        return EulerAngles(phi, theta, psi)
+        return EulerAngles([phi, theta, psi])
 
     @staticmethod
     def from_quat(q: UnitQuaternion) -> EulerAngles:
@@ -157,7 +157,7 @@ class EulerAngles:
         # pitch = np.arcsin(pitch_arcsin)
         # yaw = np.arctan2(yaw_atan_first, yaw_atan_second)
         #
-        # return EulerAngles(roll, pitch, yaw)
+        # return EulerAngles([roll, pitch, yaw])
 
     def __repr__(self) -> str:
         return f"EulerAngles[rad](roll = {self.roll}, pitch = {self.pitch}, yaw = {self.yaw})"
