@@ -94,30 +94,6 @@ class EulerAngles(np.ndarray):
 
         return (self.R_roll() @ self.R_pitch() @ self.R_yaw()).T
 
-    def T_eb(self) -> np.ndarray:
-        """ Generate 3-by-3 transformation matrix from Euler-rates to body-rates. """
-
-        sin_phi, cos_phi = np.sin(self.roll), np.cos(self.roll)
-        sin_theta, cos_theta = np.sin(self.pitch), np.cos(self.pitch)
-
-        return np.array([
-            [1, 0, -sin_theta],
-            [0, cos_phi, sin_phi * cos_theta],
-            [0, -sin_phi, cos_phi * cos_theta]
-        ])
-
-    def T_be(self) -> np.ndarray:
-        """ Generate 3-by-3 transformation matrix from body-rates to Euler-rates. """
-
-        sin_phi, cos_phi = np.sin(self.roll), np.cos(self.roll)
-        sin_theta, cos_theta = np.sin(self.pitch), np.cos(self.pitch)
-
-        return np.array([
-            [cos_theta, sin_phi * sin_theta],
-            [cos_phi * sin_theta, 0, cos_phi * cos_theta],
-            [-sin_phi * cos_theta, 0, sin_phi, cos_phi]
-        ]) / cos_theta
-
     @staticmethod
     def from_rotmat(R: RotationMatrix) -> EulerAngles:
         """ Generate EulerAngles object from RotationMatrix """

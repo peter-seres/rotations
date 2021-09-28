@@ -34,6 +34,8 @@ def test_wrong_constructors():
 
     with pytest.raises(Exception):
         R1 = RotationMatrix(a)
+
+    with pytest.raises(Exception):
         R2 = RotationMatrix(np.array(a).flatten())
 
 

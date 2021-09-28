@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
-from .common import AngleType, Vector
-from .common import SO3 as so3
+from .common import AngleType, Vector, array_like
+from .so3 import SO3 as so3
 from .euler_angles import EulerAngles
 from .rotation_matrix import RotationMatrix
 from typing import Union
@@ -192,12 +192,16 @@ class UnitQuaternion(np.ndarray):
         return UnitQuaternion([real, *imag])
 
     @staticmethod
-    def from_rotmat(R: Union[RotationMatrix, np.ndarray]):
+    def from_rotmat(R: Union[RotationMatrix, array_like]):
         """ Generate UnitQuaternion from RotationMatrix """
 
-        if type(R) == np.ndarray:
+        if type(R) not in [RotationMatrix, *array_like]:
+            raise TypeError("Input matrix must be of type RotationmMatrix or array-like (numpy array, list, tuple)")
+
+        elif type(R) in array_like:
+            R = np.array(R)
             if R.shape != (3, 3):
-                raise ValueError("Input must be of type RotationMatrix or numpy array of size 3x3")
+                raise ValueError("Input numpy array must be of size 3x3")
 
         angle = np.arccos((np.trace(R) - 1) / 2.0)
         real_part = np.cos(angle / 2.0)
