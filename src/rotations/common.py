@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Union
 from enum import Enum, auto
 import numpy as np
 

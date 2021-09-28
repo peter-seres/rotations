@@ -56,6 +56,12 @@ class UnitQuaternion(np.ndarray):
         """ Real / Scalar part of quaternion. """
         return self.w
 
+    @real.setter
+    def real(self, value) -> None:
+        """ Settter for the Real / Scalar part of quaternion. """
+        self[0] = value
+        self.normalize()
+
     @property
     def imag(self) -> np.ndarray:
         """ Imaginary / Vector part of the quaternion (3 by 1 numpy array) """
@@ -69,6 +75,7 @@ class UnitQuaternion(np.ndarray):
             raise ValueError("Setting imaginary part must be done using an array with 3 elements.")
 
         self[1:4] = value
+        self.normalize()
 
     def normalize(self) -> None:
         if not self.is_unit:
@@ -119,10 +126,11 @@ class UnitQuaternion(np.ndarray):
         """ Override of the multiplication operator. """
         raise TypeError("UnitQuaternion does not support multiplication. Use @ operator for quaternion rotations.")
 
-    def __matmul__(self, other) -> Union[UnitQuaternion, np.ndarray]:
+    def __matmul__(self, other: Union[UnitQuaternion, np.ndarray]) -> Union[UnitQuaternion, np.ndarray]:
         if type(other) is UnitQuaternion:
             return self.quat_product(q=other)
-        elif type(other) in [np.ndarray, list, tuple]:
+        elif type(other) in array_like:
+            other = np.array(other)
             if len(other) == 3:
                 return self.quat_rotate(v=np.array(other))
             else:
@@ -147,14 +155,17 @@ class UnitQuaternion(np.ndarray):
         v_rotated = self.as_prodmat() @ v.as_prodmat() @ self.inverse()
         return UnitQuaternion(v_rotated).normalized().imag
 
-    def q_dot(self, omega: np.array) -> np.ndarray:
+    def q_dot(self, omega: array_like) -> np.ndarray:
         """
         Returns a 4D numpy array representing the rate of the change of the quaternion.
         q_dot = 0.5 * Q * [0, omega]^T
         """
-        omega = np.append(0, omega)  # Add a zero as the scalar part
-        q_dot = UnitQuaternion(0.5 * self.as_prodmat() @ omega)
-        return q_dot
+
+        if len(omega) != 3:
+            raise ValueError("Input omega must have length 3.")
+
+        omega = np.array([0, *omega])  # Add a zero as the scalar part
+        return 0.5 * self.as_prodmat() @ omega
 
     def R_bi(self) -> RotationMatrix:
         """ Generate body-to-inertial rotation matrix from quaternion. """
