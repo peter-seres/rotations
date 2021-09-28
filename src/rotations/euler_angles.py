@@ -2,10 +2,6 @@ from __future__ import annotations
 import numpy as np
 from .common import AngleType, Vector
 from .rotation_matrix import RotationMatrix
-import typing
-
-if typing.TYPE_CHECKING:
-    from .unit_quaternion import UnitQuaternion
 
 
 class EulerAngles(np.ndarray):
@@ -125,39 +121,12 @@ class EulerAngles(np.ndarray):
     @staticmethod
     def from_rotmat(R: RotationMatrix) -> EulerAngles:
         """ Generate EulerAngles object from RotationMatrix """
-        if type(R) is RotationMatrix:
-            R = R.as_matrix()
-        else:
-            raise ValueError("Input R must be of type RotationMatrix.")
 
         phi = np.arctan(R[2, 1] / R[2, 2])
         theta = -np.arcsin(R[2, 0])
         psi = np.arctan(R[1, 0] / R[0, 0])
 
         return EulerAngles([phi, theta, psi])
-
-    @staticmethod
-    def from_quat(q: UnitQuaternion) -> EulerAngles:
-        """ Generate euler angles from unit quaternion. """
-        pass
-        # if type(q) is quat.UnitQuaternion:
-        #     q = quaternion.as_vector()
-        # elif type(quaternion) is np.array:
-        #     q = quaternion
-        # else:
-        #     raise TypeError('Input has to be 4D vector or quaternion.')
-        #
-        # roll_atan_first = 2 * (q[0] * q[1] + q[2] * q[3])
-        # roll_atan_second = 1.0 - 2.0 * (q[1] ** 2 + q[2] ** 2)
-        # yaw_atan_first = 2 * (q[0] * q[3] + q[1] * q[2])
-        # yaw_atan_second = 1.0 - 2.0 * (q[2] ** 2 + q[3] ** 2)
-        # pitch_arcsin = 2 * (q[0] * q[2] - q[1] * q[3])
-        #
-        # roll = np.arctan2(roll_atan_first, roll_atan_second)
-        # pitch = np.arcsin(pitch_arcsin)
-        # yaw = np.arctan2(yaw_atan_first, yaw_atan_second)
-        #
-        # return EulerAngles([roll, pitch, yaw])
 
     def __repr__(self) -> str:
         return f"EulerAngles[rad](roll = {self.roll}, pitch = {self.pitch}, yaw = {self.yaw})"

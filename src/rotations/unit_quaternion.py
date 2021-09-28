@@ -101,14 +101,14 @@ class UnitQuaternion(np.ndarray):
                         2 * (self.x * self.y + self.w * self.z),
                         2 * (self.x * self.z - self.w * self.y)])
 
-    def unitY(self):
+    def unitY(self) -> np.ndarray:
         """ Return Y axis of respective rotation matrix (body Y). """
 
         return np.array([2 * (self.x * self.y - self.w * self.z),
                         self.w ** 2 + self.y ** 2 - self.x ** 2 - self.z ** 2,
                         2 * (self.y * self.z + self.w * self.x)])
 
-    def unitZ(self):
+    def unitZ(self) -> np.ndarray:
         """ Return Z axis of respective rotation matrix (body Z). """
 
         return np.array([2 * (self.x * self.z + self.w * self.y),
@@ -130,7 +130,7 @@ class UnitQuaternion(np.ndarray):
         else:
             raise TypeError("Unsupported type for quaternion rotation.")
 
-    def as_prodmat(self):
+    def as_prodmat(self) -> np.ndarray:
         """ Return quaternion product matrix (Kronecker matrix) """
 
         Q = np.eye(4) * self.real
@@ -156,12 +156,12 @@ class UnitQuaternion(np.ndarray):
         q_dot = UnitQuaternion(0.5 * self.as_prodmat() @ omega)
         return q_dot
 
-    def R_bi(self):
+    def R_bi(self) -> RotationMatrix:
         """ Generate body-to-inertial rotation matrix from quaternion. """
+        R = np.eye(3) + 2 * self.real * so3.hat(self.imag) + 2 * np.linalg.matrix_power(so3.hat(self.imag), 2)
+        return RotationMatrix(R)
 
-        return np.eye(3) + 2 * self.real * so3.hat(self.imag) + 2 * np.linalg.matrix_power(so3.hat(self.imag), 2)
-
-    def as_euler(self):
+    def as_euler(self) -> EulerAngles:
         """ Return EulerAngles representation of rotation."""
 
         roll_atan_first = 2 * (self.w * self.x + self.y * self.z)
@@ -195,12 +195,9 @@ class UnitQuaternion(np.ndarray):
     def from_rotmat(R: Union[RotationMatrix, np.ndarray]):
         """ Generate UnitQuaternion from RotationMatrix """
 
-        if type(R) == RotationMatrix:
-            R = R.as_matrix()
-        elif type(R) == np.ndarray:
-            pass
-        else:
-            raise ValueError("Input must be of type RotationMatrix or numpy array of size 3x3")
+        if type(R) == np.ndarray:
+            if R.shape != (3, 3):
+                raise ValueError("Input must be of type RotationMatrix or numpy array of size 3x3")
 
         angle = np.arccos((np.trace(R) - 1) / 2.0)
         real_part = np.cos(angle / 2.0)
