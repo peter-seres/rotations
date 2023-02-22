@@ -1,6 +1,10 @@
 # Rotations
 
-Rotations is a python package for describing rotations using Rotation Matrices, Euler Angles and Quaternions. 
+A python package to describe 3D rotations using unit quaternions, rotation matrices, Euler angles. 
+
+![Tests](https://github.com/Speterius/python-template/actions/workflows/test.yml/badge.svg)
+
+
 
 ## Usage
 
@@ -13,15 +17,23 @@ q2 = UnitQuaternion.from_euler_angles(roll=0.5, pitch=0, yaw=0, angletype=AngleT
 
 # Use it for quaternion rotations
 rotated_vector = q2 @ [1.0, 0.0, 0.0]
+```
+
+## Development guide
+
+### Install package 
 
 ```
-// todo: complete usage description
+git clone git@github.com:peter-seres/rotations.git
+cd rotations
+python -m venv venv
+venv\scripts\Activate
+pip install -r requirements.txt
+pip install -r requirements_dev.txt
+pip install -e .
+```
 
-## CI
-The repo is set up for automated tests with:
-
-- `pytest`: unit tests
-- `flake8`: linter
-- `tox`: multiple environments
-
-![Tests](https://github.com/Speterius/python-template/actions/workflows/test.yml/badge.svg)
+### CI
+- Automate tests with `pytest`
+- Automate linting using `black`
+- `tox`: automate github actions for multiple environments
