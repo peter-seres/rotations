@@ -3,7 +3,8 @@
 A python package to describe 3D rotations using unit quaternions, rotation matrices, Euler angles. 
 
 ![Tests](https://github.com/Speterius/python-template/actions/workflows/test.yml/badge.svg)
-
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+ [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
 
 
 ## Usage
@@ -13,7 +14,7 @@ from rotations import UnitQuaternion, RotationMatrix, EulerAngles, AngleType
 
 # Specify unit quaternions
 q1 = UnitQuaternion.from_(1.0, 0.0, 0.0, 0.0)
-q2 = UnitQuaternion.from_euler_angles(roll=0.5, pitch=0, yaw=0, angletype=AngleType.DEGREES)
+q2 = UnitQuaternion.from_euler_angles(roll=30.0, pitch=10.0, yaw=0, angletype=AngleType.DEGREES)
 
 # Use it for quaternion rotations
 rotated_vector = q2 @ [1.0, 0.0, 0.0]

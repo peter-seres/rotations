@@ -4,13 +4,9 @@ import pytest
 
 
 def test_constructors():
-    a = [[1, 2, 3],
-         [4, 5, 6],
-         [7, 8, 9]]
+    a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 
-    b = ((1, 2, 3),
-         (4, 5, 6),
-         (7, 8, 9))
+    b = ((1, 2, 3), (4, 5, 6), (7, 8, 9))
 
     c = np.array(a)
 
@@ -27,10 +23,7 @@ def test_constructors():
 
 
 def test_wrong_constructors():
-
-    a = [[1, 2, 3, 4],
-         [4, 5, 6, 5],
-         [7, 8, 9, 7]]
+    a = [[1, 2, 3, 4], [4, 5, 6, 5], [7, 8, 9, 7]]
 
     with pytest.raises(Exception):
         _ = RotationMatrix(a)
