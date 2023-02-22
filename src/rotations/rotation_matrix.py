@@ -17,25 +17,25 @@ class RotationMatrix(np.ndarray):
 
     @staticmethod
     def from_vector(v: Vector) -> RotationMatrix:
-        """ Generate rotation matrix from 9-by-1 matrix. """
+        """Generate rotation matrix from 9-by-1 matrix."""
 
         return RotationMatrix(np.array(v).reshape(3, 3))
 
     @staticmethod
     def identity() -> RotationMatrix:
-        """ Generate identity rotation matrix. """
+        """Generate identity rotation matrix."""
 
         return RotationMatrix(np.eye(3))
 
     @staticmethod
     def default() -> RotationMatrix:
-        """ Default no-rotation matrix returns the identity matrix. """
+        """Default no-rotation matrix returns the identity matrix."""
 
         return RotationMatrix.identity()
 
     @staticmethod
     def from_yaw_and_z(yaw: float = 0.0, z: Vector = None) -> RotationMatrix:
-        """ Generate rotation matrix from yaw angle and inertial Z axis. """
+        """Generate rotation matrix from yaw angle and inertial Z axis."""
 
         if z is None:
             z = np.array([0.0, 0.0, 1.0])

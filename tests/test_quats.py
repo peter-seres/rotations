@@ -26,7 +26,6 @@ def test_constructors():
 
 
 def test_properties(q_test):
-
     assert q_test.w > 0.0
     assert q_test.z > 0.0
     assert q_test.x == q_test.y == 0.0
@@ -83,7 +82,7 @@ def test_qdot(q_default):
     omega2 = [0.0, 0.0, rate]
     qdot2 = q_default.q_dot(omega2)
 
-    assert qdot2 == pytest.approx([0, 0, 0, rate/2])
+    assert qdot2 == pytest.approx([0, 0, 0, rate / 2])
 
     with pytest.raises(Exception):
         _ = q_default.q_dot([0, 0])
