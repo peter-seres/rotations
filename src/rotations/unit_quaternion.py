@@ -9,7 +9,7 @@ from typing import Union
 
 class UnitQuaternion(np.ndarray):
     """
-    UnitQuaternion class. Subclassed from numpy array for performance.
+    Rotations represented using Quaternion vector on the 4D unit sphere.
     0: scalar element, real part, w
     1-2-3: vector element, imaginary part, x-y-z
     """
@@ -21,7 +21,6 @@ class UnitQuaternion(np.ndarray):
         obj = np.asarray(q, dtype=float).view(cls)
         return obj
 
-    # noinspection PyMissingConstructor
     def __init__(self, _: Vector) -> None:
         self.normalize()
 
@@ -43,7 +42,8 @@ class UnitQuaternion(np.ndarray):
 
     @property
     def norm(self) -> float:
-        return np.linalg.norm(self)
+        """Return the 2-norm of the quaternion"""
+        return float(np.linalg.norm(self))
 
     @property
     def is_unit(self, tolerance: float = 1e-15) -> bool:
@@ -52,18 +52,18 @@ class UnitQuaternion(np.ndarray):
 
     @property
     def real(self) -> float:
-        """Real / Scalar part of quaternion."""
+        """Real part (w) of quaternion."""
         return self.w
 
     @real.setter
     def real(self, value) -> None:
-        """Settter for the Real / Scalar part of quaternion."""
+        """Settter for the real part (w) of quaternion."""
         self[0] = value
-        self.normalize()
+        self.normalize()  # re-normalize
 
     @property
     def imag(self) -> np.ndarray:
-        """Imaginary / Vector part of the quaternion (3 by 1 numpy array)"""
+        """Imaginary part of the quaternion (3-by-1)"""
         return self[1:4]
 
     @imag.setter
@@ -76,25 +76,30 @@ class UnitQuaternion(np.ndarray):
             )
 
         self[1:4] = value
-        self.normalize()
+        self.normalize()  # re-normalize
 
     def normalize(self) -> None:
+        """Normalize the quaternion object in-place."""
         if not self.is_unit:
             if self.norm > 0:
                 self.__itruediv__(self.norm)
 
     def normalized(self) -> UnitQuaternion:
-        self.normalize()
-        return self
+        """Return a new, normalized quaternion object."""
+        q = self.copy()
+        q.normalize()
+        return q
 
     def conjugate(self) -> UnitQuaternion:
+        """Return the conjugate quaternion object."""
         q = self.copy()
         q.imag *= -1
         return q
 
     def inverse(self) -> UnitQuaternion:
-        """inverse = conjugate / norm for general quaternions. Unit quats are already normalized."""
-        return self.conjugate()
+        """Return the quaternion inverse, i.e. conjugate = norm. (for unit quaternions inverse = conjugate)"""
+        q = self.conjugate() / self.norm
+        return UnitQuaternion.from_(*q)
 
     def flipped(self) -> UnitQuaternion:
         """The quaternion on the opposite side of the 4D sphere."""
@@ -102,7 +107,7 @@ class UnitQuaternion(np.ndarray):
         q.real *= -1
         return q
 
-    def unitX(self) -> np.ndarray:
+    def unit_x(self) -> np.ndarray:
         """Return X axis of respective rotation matrix (body X)."""
 
         return np.array(
@@ -113,7 +118,7 @@ class UnitQuaternion(np.ndarray):
             ]
         )
 
-    def unitY(self) -> np.ndarray:
+    def unit_y(self) -> np.ndarray:
         """Return Y axis of respective rotation matrix (body Y)."""
 
         return np.array(
@@ -124,7 +129,7 @@ class UnitQuaternion(np.ndarray):
             ]
         )
 
-    def unitZ(self) -> np.ndarray:
+    def unit_z(self) -> np.ndarray:
         """Return Z axis of respective rotation matrix (body Z)."""
 
         return np.array(
@@ -144,6 +149,8 @@ class UnitQuaternion(np.ndarray):
     def __matmul__(
         self, other: Union[UnitQuaternion, np.ndarray]
     ) -> Union[UnitQuaternion, np.ndarray]:
+        """ Override of the @ operator for quaternion rotation. p'= q @ p = q * p * q^-1 """
+
         if type(other) is UnitQuaternion:
             return self.quat_product(q=other)
         elif type(other) in array_like:
@@ -157,7 +164,6 @@ class UnitQuaternion(np.ndarray):
 
     def as_prodmat(self) -> np.ndarray:
         """Return quaternion product matrix (Kronecker matrix)"""
-
         Q = np.eye(4) * self.real
         Q[0, 1:4] -= self.imag
         Q[1:4, 0] += self.imag

@@ -6,6 +6,11 @@ A python package to describe 3D rotations using unit quaternions, rotation matri
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
  [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
 
+## Dependencies
+
+Only depends on `numpy`
+
+Tested for: `Python 3.8, 3.9, 3.10`
 
 ## Usage
 

@@ -1,9 +1,12 @@
 from __future__ import annotations
+from typing import Optional
 import numpy as np
 from .common import Vector, Matrix
 
 
 class RotationMatrix(np.ndarray):
+    """3 by 3 rotation matrix."""
+
     def __new__(cls, R: Matrix) -> RotationMatrix:
         obj = np.asarray(R, dtype=float).view(cls)
 
@@ -17,24 +20,21 @@ class RotationMatrix(np.ndarray):
 
     @staticmethod
     def from_vector(v: Vector) -> RotationMatrix:
-        """Generate rotation matrix from 9-by-1 matrix."""
-
+        """Generate 3-by-3 rotation matrix from 9-by-1 vector."""
         return RotationMatrix(np.array(v).reshape(3, 3))
 
     @staticmethod
     def identity() -> RotationMatrix:
         """Generate identity rotation matrix."""
-
         return RotationMatrix(np.eye(3))
 
     @staticmethod
     def default() -> RotationMatrix:
         """Default no-rotation matrix returns the identity matrix."""
-
         return RotationMatrix.identity()
 
     @staticmethod
-    def from_yaw_and_z(yaw: float = 0.0, z: Vector = None) -> RotationMatrix:
+    def from_yaw_and_z(yaw: float = 0.0, z: Optional[Vector] = None) -> RotationMatrix:
         """Generate rotation matrix from yaw angle and inertial Z axis."""
 
         if z is None:
