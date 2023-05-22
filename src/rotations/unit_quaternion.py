@@ -7,23 +7,19 @@ from .rotation_matrix import RotationMatrix
 from typing import Union
 
 
-class UnitQuaternion(np.ndarray):
+class Quaternion(np.ndarray):
     """
-    UnitQuaternion class. Subclassed from numpy array for performance.
+    Quaternion class. Subclassed from numpy array for performance.
     0: scalar element, real part, w
     1-2-3: vector element, imaginary part, x-y-z
     """
 
-    def __new__(cls, q: Vector) -> UnitQuaternion:
+    def __new__(cls, q: Vector) -> Quaternion:
         if len(q) != 4:
             raise ValueError(f"Input array q: {q} must have length 4.")
 
         obj = np.asarray(q, dtype=float).view(cls)
         return obj
-
-    # noinspection PyMissingConstructor
-    def __init__(self, _: Vector) -> None:
-        self.normalize()
 
     @property
     def w(self) -> float:
@@ -101,6 +97,60 @@ class UnitQuaternion(np.ndarray):
         q = self.copy()
         q.real *= -1
         return q
+    
+    def as_prodmat(self) -> np.ndarray:
+        """Return quaternion product matrix (Kronecker matrix)"""
+        Q = np.eye(4) * self.real
+        Q[0, 1:4] -= self.imag
+        Q[1:4, 0] += self.imag
+        Q[1:4, 1:4] += so3.hat(self.imag)
+        return Q
+    
+    def q_dot(self, omega: array_like) -> np.ndarray:
+        """
+        Returns a 4D numpy array representing the rate of the change of the quaternion.
+        q_dot = 0.5 * Q * [0, omega]^T
+        """
+
+        if len(omega) != 3:
+            raise ValueError("Input omega must have length 3.")
+
+        omega = np.array([0, *omega])  # Add a zero as the scalar part
+        return 0.5 * self.as_prodmat() @ omega
+
+
+class UnitQuaternion(Quaternion):
+
+    def __init__(self, _: Vector) -> None:
+        self.normalize()
+
+    def __mul__(self, other):
+        """Override of the multiplication operator."""
+        raise TypeError(
+            "UnitQuaternion does not support multiplication. Use @ operator for quaternion rotations."
+        )
+
+    def __matmul__(
+        self, other: Union[UnitQuaternion, np.ndarray]
+    ) -> Union[UnitQuaternion, np.ndarray]:
+        if type(other) is UnitQuaternion:
+            return self.quat_product(q=other)
+        elif type(other) in array_like:
+            other = np.array(other)
+            if len(other) == 3:
+                return self.quat_rotate(v=np.array(other))
+            else:
+                raise ValueError("Quaternion rotation must involve a 3D vector")
+        else:
+            raise TypeError("Unsupported type for quaternion rotation.")
+
+    def quat_product(self, q: UnitQuaternion) -> UnitQuaternion:
+        return UnitQuaternion(self.as_prodmat() @ q)
+
+    def quat_rotate(self, v: Vector) -> np.ndarray:
+        v = Quaternion([0.0, *v])
+        v_rotated = self.as_prodmat() @ v.as_prodmat() @ self.inverse()
+        return Quaternion(v_rotated).imag
 
     def unitX(self) -> np.ndarray:
         """Return X axis of respective rotation matrix (body X)."""
@@ -135,55 +185,6 @@ class UnitQuaternion(np.ndarray):
             ]
         )
 
-    def __mul__(self, other):
-        """Override of the multiplication operator."""
-        raise TypeError(
-            "UnitQuaternion does not support multiplication. Use @ operator for quaternion rotations."
-        )
-
-    def __matmul__(
-        self, other: Union[UnitQuaternion, np.ndarray]
-    ) -> Union[UnitQuaternion, np.ndarray]:
-        if type(other) is UnitQuaternion:
-            return self.quat_product(q=other)
-        elif type(other) in array_like:
-            other = np.array(other)
-            if len(other) == 3:
-                return self.quat_rotate(v=np.array(other))
-            else:
-                raise ValueError("Quaternion rotation must involve a 3D vector")
-        else:
-            raise TypeError("Unsupported type for quaternion rotation.")
-
-    def as_prodmat(self) -> np.ndarray:
-        """Return quaternion product matrix (Kronecker matrix)"""
-
-        Q = np.eye(4) * self.real
-        Q[0, 1:4] -= self.imag
-        Q[1:4, 0] += self.imag
-        Q[1:4, 1:4] += so3.hat(self.imag)
-        return Q
-
-    def quat_product(self, q: UnitQuaternion) -> UnitQuaternion:
-        return UnitQuaternion(self.as_prodmat() @ q)
-
-    def quat_rotate(self, v: Vector) -> np.ndarray:
-        v = UnitQuaternion([0.0, *v])
-        v_rotated = self.as_prodmat() @ v.as_prodmat() @ self.inverse()
-        return UnitQuaternion(v_rotated).imag
-
-    def q_dot(self, omega: array_like) -> np.ndarray:
-        """
-        Returns a 4D numpy array representing the rate of the change of the quaternion.
-        q_dot = 0.5 * Q * [0, omega]^T
-        """
-
-        if len(omega) != 3:
-            raise ValueError("Input omega must have length 3.")
-
-        omega = np.array([0, *omega])  # Add a zero as the scalar part
-        return 0.5 * self.as_prodmat() @ omega
-
     def R_bi(self) -> RotationMatrix:
         """Generate body-to-inertial rotation matrix from quaternion."""
         R = (
@@ -210,7 +211,7 @@ class UnitQuaternion(np.ndarray):
 
     @staticmethod
     def default() -> UnitQuaternion:
-        """Zero-rotation quaternion."""
+        """Zero-rotation unit quaternion."""
         return UnitQuaternion([1.0, 0.0, 0.0, 0.0])
 
     @staticmethod
