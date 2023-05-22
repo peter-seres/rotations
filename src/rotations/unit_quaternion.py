@@ -170,7 +170,7 @@ class UnitQuaternion(np.ndarray):
     def quat_rotate(self, v: Vector) -> np.ndarray:
         v = UnitQuaternion([0.0, *v])
         v_rotated = self.as_prodmat() @ v.as_prodmat() @ self.inverse()
-        return UnitQuaternion(v_rotated).normalized().imag
+        return UnitQuaternion(v_rotated).imag
 
     def q_dot(self, omega: array_like) -> np.ndarray:
         """
